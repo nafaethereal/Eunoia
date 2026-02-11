@@ -1229,6 +1229,18 @@ const dialogCancelBtn = document.getElementById('dialog-cancel');
 
 function showCustomDialog(title, message, type = 'alert') {
     return new Promise((resolve) => {
+        // Safety Fallback for Landing Page
+        if (!customDialog || !dialogTitle || !dialogMessage) {
+            console.warn("Custom dialog elements missing, falling back to window.alert");
+            if (type === 'confirm') {
+                resolve(window.confirm(message));
+            } else {
+                window.alert(message);
+                resolve(true);
+            }
+            return;
+        }
+
         dialogTitle.textContent = title;
         dialogMessage.textContent = message;
 

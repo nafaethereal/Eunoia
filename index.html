@@ -47,6 +47,23 @@
         </div>
     </div>
 
+    <!-- Custom Dialog (Alert/Confirm) -->
+    <div id="custom-dialog" class="modal hidden" style="z-index: 5000;">
+        <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px;">
+            <h3 id="dialog-title" class="modal-title">Alert</h3>
+            <p id="dialog-message" style="color: var(--text-main); margin: 20px 0;">Message goes here.</p>
+            <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
+                <button id="dialog-cancel" class="btn-soft hidden">Cancel</button>
+                <button id="dialog-confirm" class="btn-primary" style="min-width: 100px;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+
     <!-- Firebase SDKs -->
     <script type="module" src="app.js"></script>
 </body>
