@@ -1,6 +1,6 @@
 // Import Firebase SDKs (NO STORAGE!)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // --- FIREBASE CONFIGURATION (REPLACE WITH YOUR KEYS) ---
@@ -42,15 +42,37 @@ let currentOverviewSelection = ""; // Track current active month-year selection
 // --- AUTHENTICATION ---
 const provider = new GoogleAuthProvider();
 
+// Detect mobile devices
+const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+// Handle redirect result (for mobile)
+getRedirectResult(auth)
+    .then((result) => {
+        if (result && result.user) {
+            console.log("Logged in via redirect:", result.user);
+        }
+    }).catch((error) => {
+        console.error("Redirect login error:", error);
+        if (error.code !== 'auth/popup-closed-by-user') {
+            showAlert("Login Error", "Gagal login. Silakan cek koneksi atau coba lagi.");
+        }
+    });
+
 if (loginBtn) {
     loginBtn.addEventListener('click', () => {
-        signInWithPopup(auth, provider)
-            .then((result) => {
-                console.log("Logged in:", result.user);
-            }).catch((error) => {
-                console.error("Login failed:", error);
-                showAlert("Login Error", "Login failed. Please try again.");
-            });
+        if (isMobile()) {
+            signInWithRedirect(auth, provider);
+        } else {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    console.log("Logged in:", result.user);
+                }).catch((error) => {
+                    console.error("Login failed:", error);
+                    if (error.code !== 'auth/popup-closed-by-user') {
+                        showAlert("Login Error", "Login failed. Please try again.");
+                    }
+                });
+        }
     });
 }
 
