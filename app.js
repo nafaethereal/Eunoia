@@ -42,32 +42,52 @@ let currentOverviewSelection = ""; // Track current active month-year selection
 // --- AUTHENTICATION ---
 const provider = new GoogleAuthProvider();
 
-// Detect mobile devices
-const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+// Detect mobile devices (Improved)
+const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 0) ||
+        (window.innerWidth <= 800);
+};
 
 // Handle redirect result (for mobile)
-getRedirectResult(auth)
-    .then((result) => {
-        if (result && result.user) {
-            console.log("Logged in via redirect:", result.user);
-        }
-    }).catch((error) => {
-        console.error("Redirect login error:", error);
-        if (error.code !== 'auth/popup-closed-by-user') {
-            showAlert("Login Error", "Gagal login. Silakan cek koneksi atau coba lagi.");
-        }
-    });
+if (auth) {
+    getRedirectResult(auth)
+        .then((result) => {
+            if (result && result.user) {
+                console.log("Logged in via redirect:", result.user);
+            }
+        }).catch((error) => {
+            console.error("Redirect login error:", error);
+            if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+                showAlert("Login Error", "Gagal login. Silakan coba lagi atau gunakan browser lain.");
+            }
+        });
+}
 
 if (loginBtn) {
-    loginBtn.addEventListener('click', () => {
+    loginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log("Login button clicked, mobile:", isMobile());
+
+        // Visual feedback
+        loginBtn.style.opacity = "0.7";
+        loginBtn.style.transform = "scale(0.95)";
+
         if (isMobile()) {
-            signInWithRedirect(auth, provider);
+            try {
+                signInWithRedirect(auth, provider);
+            } catch (err) {
+                console.error("Redirect failed:", err);
+                signInWithPopup(auth, provider); // Fallback
+            }
         } else {
             signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Logged in:", result.user);
                 }).catch((error) => {
                     console.error("Login failed:", error);
+                    loginBtn.style.opacity = "1";
+                    loginBtn.style.transform = "scale(1)";
                     if (error.code !== 'auth/popup-closed-by-user') {
                         showAlert("Login Error", "Login failed. Please try again.");
                     }
@@ -167,69 +187,79 @@ const uploadForm = document.getElementById('upload-form');
 const fileInput = document.getElementById('art-file');
 const previewImg = document.getElementById('image-preview');
 
-openUploadBtn.addEventListener('click', () => uploadModal.classList.remove('hidden'));
-closeUploadBtn.addEventListener('click', () => uploadModal.classList.add('hidden'));
+if (openUploadBtn) openUploadBtn.addEventListener('click', () => uploadModal.classList.remove('hidden'));
+if (closeUploadBtn) closeUploadBtn.addEventListener('click', () => uploadModal.classList.add('hidden'));
 
-fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        // Check file size (max 1MB recommended for Base64)
-        if (file.size > 1024 * 1024) {
-            showAlert("Gambar Terlalu Besar", "Maksimal 1MB. Coba kompres dulu ya.");
-            fileInput.value = '';
-            return;
+if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Check file size (max 1MB recommended for Base64)
+            if (file.size > 1024 * 1024) {
+                showAlert("Gambar Terlalu Besar", "Maksimal 1MB. Coba kompres dulu ya.");
+                fileInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (previewImg) {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
         }
+    });
+}
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            previewImg.src = e.target.result;
-            previewImg.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-});
+if (uploadForm) {
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const user = auth.currentUser;
+        if (!user) return;
 
-uploadForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const user = auth.currentUser;
-    if (!user) return;
+        const file = fileInput.files[0];
+        const category = document.getElementById('art-category').value;
+        const caption = document.getElementById('art-caption').value;
+        const submitBtn = document.getElementById('upload-submit-btn');
 
-    const file = fileInput.files[0];
-    const category = document.getElementById('art-category').value;
-    const caption = document.getElementById('art-caption').value;
-    const submitBtn = document.getElementById('upload-submit-btn');
+        if (!file) return;
 
-    if (!file) return;
+        try {
+            if (submitBtn) {
+                submitBtn.textContent = "Uploading...";
+                submitBtn.disabled = true;
+            }
 
-    try {
-        submitBtn.textContent = "Uploading...";
-        submitBtn.disabled = true;
+            // Convert image to Base64
+            const base64Image = await fileToBase64(file);
 
-        // Convert image to Base64
-        const base64Image = await fileToBase64(file);
+            // Save to Firestore (NO STORAGE NEEDED!)
+            await addDoc(collection(db, "gallery_posts"), {
+                uid: user.uid,
+                authorName: user.displayName,
+                imageData: base64Image, // Base64 string
+                category: category,
+                caption: caption,
+                createdAt: serverTimestamp()
+            });
 
-        // Save to Firestore (NO STORAGE NEEDED!)
-        await addDoc(collection(db, "gallery_posts"), {
-            uid: user.uid,
-            authorName: user.displayName,
-            imageData: base64Image, // Base64 string
-            category: category,
-            caption: caption,
-            createdAt: serverTimestamp()
-        });
-
-        uploadModal.classList.add('hidden');
-        uploadForm.reset();
-        previewImg.classList.add('hidden');
-        showAlert("Success", "Artwork uploaded successfully!");
-    } catch (error) {
-        console.error("Upload error:", error);
-        showAlert("Error", "Failed to upload. See console.");
-    } finally {
-        submitBtn.textContent = "Upload";
-        submitBtn.disabled = false;
-    }
-});
+            if (uploadModal) uploadModal.classList.add('hidden');
+            uploadForm.reset();
+            if (previewImg) previewImg.classList.add('hidden');
+            showAlert("Success", "Artwork uploaded successfully!");
+        } catch (error) {
+            console.error("Upload error:", error);
+            showAlert("Error", "Failed to upload. See console.");
+        } finally {
+            if (submitBtn) {
+                submitBtn.textContent = "Upload";
+                submitBtn.disabled = false;
+            }
+        }
+    });
+}
 
 // Helper: Convert File to Base64
 function fileToBase64(file) {
