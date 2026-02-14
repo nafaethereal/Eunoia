@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - Eunoia</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap" rel="stylesheet">
+</head>
+
+<body class="landing-background">
+    <!-- Landing Page -->
+    <div class="landing-page">
+        <div class="landing-container fade-in">
+            <header class="landing-header">
+                <img src="logo.png" alt="Eunoia Logo" class="logo-img-hero">
+                <p class="tagline">where art meets emotion</p>
+                <div class="divider"></div>
+            </header>
+
+            <main class="landing-main">
+                <p class="welcome-text">
+                    Capture your creative journey and emotional growth in a private, aesthetic space.
+                    A sanctuary for your art and your thoughts.
+                </p>
+                <button id="google-login-btn" class="btn-premium">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo"
+                        class="google-icon">
+                    Login with Google
+                </button>
+            </main>
+
+            <footer class="landing-footer">
+                <p>&copy; 2026 Eunoia. Crafted with love for creators.</p>
+                <div class="private-label">Private & Invite-Only</div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Custom Dialog (Alert/Confirm) -->
+    <div id="custom-dialog" class="modal hidden" style="z-index: 5000;">
+        <div class="modal-content" style="max-width: 400px; text-align: center; padding: 30px;">
+            <h3 id="dialog-title" class="modal-title">Alert</h3>
+            <p id="dialog-message" style="color: var(--text-main); margin: 20px 0;">Message goes here.</p>
+            <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
+                <button id="dialog-cancel" class="btn-soft hidden">Cancel</button>
+                <button id="dialog-confirm" class="btn-primary" style="min-width: 100px;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
